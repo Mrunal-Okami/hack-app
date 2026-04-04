@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from pipeline import extract_claims, verify_claim, repair_sentence
 from utils import extract_text_from_pdf
 # CRITICAL: Added 'repair_sentence' to the imports below
-from pipeline import extract_claims, verify_claim, repair_sentence
+from pipeline import extract_claims, verify_claim, repair_sentence, calculate_document_score
 
 app = FastAPI()
 
@@ -78,6 +78,6 @@ async def verify_pdf(file: UploadFile = File(...)):
         
     return {
         "filename": file.filename, 
-        "total_characters": len(raw_text),
-        "results": results
+        "results": results,
+        "summary": calculate_document_score(results) # Add this line
     }
