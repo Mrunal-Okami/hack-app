@@ -1,17 +1,16 @@
 # prompts.py [cite: 122-133, 154-165, 218-226]
-
 EXTRACT_PROMPT = """
-Read the text below. Extract every falsifiable factual claim.
-For each claim return a JSON object with these exact keys:
-sentence: the exact sentence from the text
-subject:  the main subject of the claim
-predicate: the action or relationship
-object:   the claimed fact/value/date
-search_query: a 4-6 word web search to verify this claim
-claim_type: FACTUAL, STATISTICAL, TEMPORAL, or OPINION
+You are a factual claim extractor. 
+Analyze the following text and extract every unique factual claim as a separate JSON object.
 
-Return ONLY a valid JSON array. No markdown, no preamble.
-TEXT: {text}
+Text: "{text}"
+
+Return ONLY a JSON list of objects with these keys: "sentence", "subject", "predicate", "object".
+Example:
+[
+  {{"sentence": "The moon is a planet", "subject": "Moon", "predicate": "is", "object": "planet"}},
+  {{"sentence": "The moon revolves around Earth", "subject": "Moon", "predicate": "revolves", "object": "Earth"}}
+]
 """
 
 VERDICT_PROMPT = """

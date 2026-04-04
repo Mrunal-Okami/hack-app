@@ -11,7 +11,7 @@ def call_llm(prompt: str) -> str:
     # 1. Primary: Gemini (Best reasoning) [cite: 48-54]
     try:
         genai.configure(api_key=os.getenv('GEMINI_KEY_1'))
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
         if response.text:
             return response.text

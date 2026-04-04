@@ -10,25 +10,31 @@ from transcriber import transcribe_audio
 
 app = FastAPI()
 
+# UPDATED CORS SETTINGS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=[
+        "http://127.0.0.1:5500",  # Your VS Code Live Server
+        "http://localhost:5500",
+        "http://127.0.0.1:3000",  # Standard React port
+        "*"                        # Allow all for the hackathon
+    ], 
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # --- DATA MODELS ---
 
 class TextData(BaseModel):
     text: str
 
+class UrlData(BaseModel):
+    url: str
+
 # New model for the Repair feature
 class RepairRequest(BaseModel):
     sentence: str
     reason: str
-
-class UrlData(BaseModel):
-    url: str
 
 # --- ENDPOINTS ---
 
@@ -43,7 +49,12 @@ async def process_text(data: TextData):
     for c in claims:
         verdict = verify_claim(c)
         results.append({**c, **verdict})
-    return {"results": results}
+    
+    # ADDED THIS: Calculate the summary for plain text too
+    return {
+        "results": results,
+        "summary": calculate_document_score(results) 
+    }
 
 @app.post("/repair")
 async def repair_text(data: RepairRequest):
