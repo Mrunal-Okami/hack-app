@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from utils import extract_text_from_pdf
 # CRITICAL: Added 'repair_sentence' to the imports below
 from pipeline import extract_claims, verify_claim, repair_sentence, calculate_document_score
+from audio_utils import download_youtube_audio
+from transcriber import transcribe_audio
 
 app = FastAPI()
 
@@ -24,6 +26,9 @@ class TextData(BaseModel):
 class RepairRequest(BaseModel):
     sentence: str
     reason: str
+
+class UrlData(BaseModel):
+    url: str
 
 # --- ENDPOINTS ---
 
@@ -79,4 +84,27 @@ async def verify_pdf(file: UploadFile = File(...)):
         "filename": file.filename, 
         "results": results,
         "summary": calculate_document_score(results) # Add this line
+    }
+@app.post("/verify-url")
+async def verify_url(data: UrlData): # Use UrlData here instead of dict
+    url = data.url
+    
+    # 1. Download
+    audio_path = download_youtube_audio(url)
+    
+    # 2. Transcribe (Using your RTX 3050!)
+    text = transcribe_audio(audio_path)
+    
+    # 3. Reuse your existing verification logic
+    claims = extract_claims(text[:2000]) 
+    results = []
+    for c in claims:
+        verdict = verify_claim(c)
+        results.append({**c, **verdict})
+        
+    return {
+        "url": url,
+        "transcript": text,
+        "results": results,
+        "summary": calculate_document_score(results)
     }
