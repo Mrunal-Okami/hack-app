@@ -20,6 +20,7 @@ def verify_claim(claim: dict) -> dict:
             results = list(ddgs.text(query, max_results=3))
             # CRITICAL FIX: Include the 'href' (the link) so the AI can use it as a source
             snippets = "\n".join([f"Source: {r['href']} | Content: {r['body']}" for r in results])
+            results = results or []
     except:
         snippets = "No search results found."
 
@@ -44,16 +45,6 @@ def repair_sentence(item: dict) -> str:
         source_snippet=item.get('reason', '')
     )
     return call_llm(prompt).strip()
-
-# Example of a robust verify_claim in pipeline.py
-def verify_claim(claim: dict) -> dict:
-    try:
-        with DDGS() as ddgs:
-            results = list(ddgs.text(claim.get('search_query', ''), max_results=3))
-            # ... rest of your logic ...
-    except Exception as e:
-        print(f"Search Error: {e}")
-        return {"verdict": "UNVERIFIABLE", "reason": "Search engine timeout", "source": ""}
     
 def calculate_document_score(results: list) -> dict:
     if not results: return {"score": 0, "label": "No Data"}

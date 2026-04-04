@@ -2,7 +2,6 @@ from fastapi import FastAPI, File, UploadFile
 # Use this specific path for the middleware
 from fastapi.middleware.cors import CORSMiddleware 
 from pydantic import BaseModel
-from pipeline import extract_claims, verify_claim, repair_sentence
 from utils import extract_text_from_pdf
 # CRITICAL: Added 'repair_sentence' to the imports below
 from pipeline import extract_claims, verify_claim, repair_sentence, calculate_document_score
