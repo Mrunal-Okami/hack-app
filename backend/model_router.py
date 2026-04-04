@@ -1,3 +1,10 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+if not os.getenv("GEMINI_KEY_1") or not os.getenv("GROQ_KEY"):
+    raise ValueError("CRITICAL ERROR: API Keys missing in .env file!")
 # model_router.py [cite: 35-78]
 import os
 import google.generativeai as genai
