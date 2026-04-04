@@ -54,3 +54,14 @@ def verify_claim(claim: dict) -> dict:
     except Exception as e:
         print(f"Search Error: {e}")
         return {"verdict": "UNVERIFIABLE", "reason": "Search engine timeout", "source": ""}
+    
+def calculate_document_score(results: list) -> dict:
+    if not results: return {"score": 0, "label": "No Data"}
+    verified = sum(1 for r in results if r['verdict'] == 'VERIFIED')
+    score = int((verified / len(results)) * 100)
+    
+    if score > 80: label = "Highly Credible"
+    elif score > 50: label = "Mixed Accuracy"
+    else: label = "High-Risk/Slop"
+    
+    return {"score": score, "label": label}
