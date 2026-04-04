@@ -36,7 +36,6 @@ def verify_claim(claim: dict) -> dict:
     
     try:
         with DDGS() as ddgs:
-            # list() ensures we capture the search results immediately
             search_results = list(ddgs.text(query, max_results=3))
             if search_results:
                 snippets = "\n".join([f"Source: {r['href']} | Content: {r['body']}" for r in search_results])
@@ -60,26 +59,26 @@ def verify_claim(claim: dict) -> dict:
         TRUTH_WORDS = ["VERIFIED", "TRUE", "CONFIRMED", "SUPPORTED", "FACTUAL", "PARTIALLY CONFIRMED"]
         LIE_WORDS = ["CONTRADICTED", "FALSE", "INACCURATE", "LIE", "DENIED", "REFUTED", "INCORRECT", "UNSUPPORTED", "MISSING"]
 
+        # --- ENHANCED HEATMAP COLORING ---
         if any(word in verdict_str for word in LIE_WORDS) or "NOT SUPPORT" in reason_str:
             data["score"] = 0.0
-            data["color"] = "#ef4444" 
+            data["color"] = "#ef4444" # Bright Red
         elif any(word in verdict_str for word in TRUTH_WORDS):
             data["score"] = 1.0
-            data["color"] = "#22c55e" 
+            data["color"] = "#22c55e" # Bright Green
         else:
             data["score"] = 0.5
-            data["color"] = "#eab308" 
+            data["color"] = "#eab308" # Amber Yellow
             
         return data
     except:
         return {
             "verdict": "UNVERIFIABLE", 
-            "reason": "Parsing error", 
+            "reason": "Analysis parsing failed.", 
             "source": "",
             "score": 0.5,
             "color": "#eab308"
         }
-
 # 3. Repair Logic
 def repair_sentence(item: dict) -> str:
     prompt = REPAIR_PROMPT.format(
