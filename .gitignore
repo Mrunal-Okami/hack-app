@@ -1,0 +1,15 @@
+# Security: Never upload your keys [cite: 29]
+.env
+backend/.env
+
+# Dependencies: Others will install these from requirements.txt [cite: 294, 309]
+venv/
+veritas_env/
+
+# Python internals 
+__pycache__/
+*.pyc
+
+# Local temporary files 
+temp_audio.*
+demo_cache.json
