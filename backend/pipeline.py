@@ -44,3 +44,13 @@ def repair_sentence(item: dict) -> str:
         source_snippet=item.get('reason', '')
     )
     return call_llm(prompt).strip()
+
+# Example of a robust verify_claim in pipeline.py
+def verify_claim(claim: dict) -> dict:
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.text(claim.get('search_query', ''), max_results=3))
+            # ... rest of your logic ...
+    except Exception as e:
+        print(f"Search Error: {e}")
+        return {"verdict": "UNVERIFIABLE", "reason": "Search engine timeout", "source": ""}
