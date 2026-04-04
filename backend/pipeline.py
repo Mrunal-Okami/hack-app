@@ -3,14 +3,21 @@ import json
 from model_router import call_llm
 from prompts import EXTRACT_PROMPT, VERDICT_PROMPT, REPAIR_PROMPT # Added REPAIR_PROMPT
 from duckduckgo_search import DDGS
-
 def extract_claims(text: str) -> list:
     prompt = EXTRACT_PROMPT.format(text=text)
     raw = call_llm(prompt)
-    clean = raw.strip().lstrip('```json').lstrip('```').rstrip('```').strip()
+    
+    # Cleans up the AI's markdown formatting
+    clean = raw.strip().replace('```json', '').replace('```', '').strip()
+    
     try:
-        return json.loads(clean)
-    except:
+        data = json.loads(clean)
+        # If the AI returns a dictionary with a 'claims' key, extract that list
+        if isinstance(data, dict) and "claims" in data:
+            return data["claims"]
+        return data if isinstance(data, list) else []
+    except Exception as e:
+        print(f"Extraction Error: {e}")
         return []
 
 def verify_claim(claim: dict) -> dict:
@@ -34,18 +41,27 @@ def verify_claim(claim: dict) -> dict:
     try:
         data = json.loads(clean_res)
         
-        # --- NEW HEATMAP LOGIC ---
-        verdict = data.get("verdict", "UNVERIFIABLE")
+       # --- ROBUST PRECISION HEATMAP LOGIC ---
+        verdict_str = str(data.get("verdict", "UNVERIFIABLE")).upper()
+        reason_str = str(data.get("reason", "")).upper()
         
-        if verdict == "VERIFIED":
-            data["score"] = 1.0
-            data["color"] = "#22c55e" # Tailwind Green-500
-        elif verdict == "CONTRADICTED":
+        # 1. Keywords that mean the claim is correct
+        TRUTH_WORDS = ["VERIFIED", "TRUE", "CONFIRMED", "SUPPORTED", "FACTUAL", "PARTIALLY CONFIRMED"]
+        
+        # 2. Keywords that mean the claim is wrong or missing evidence
+        LIE_WORDS = ["CONTRADICTED", "FALSE", "INACCURATE", "LIE", "DENIED", "REFUTED", "INCORRECT", "UNSUPPORTED", "MISSING"]
+
+        # CRITICAL: Check for LIE_WORDS first, and also scan the 'reason' for negative phrases
+        if any(word in verdict_str for word in LIE_WORDS) or "NOT SUPPORT" in reason_str:
             data["score"] = 0.0
-            data["color"] = "#ef4444" # Tailwind Red-500
+            data["color"] = "#ef4444" # Red
+        elif any(word in verdict_str for word in TRUTH_WORDS):
+            data["score"] = 1.0
+            data["color"] = "#22c55e" # Green
         else:
+            # This handles "UNVERIFIABLE", "Parsing error", or "OPINION"
             data["score"] = 0.5
-            data["color"] = "#eab308" # Tailwind Yellow-500
+            data["color"] = "#eab308" # Yellow
             
         return data
     except:
