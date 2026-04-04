@@ -32,11 +32,31 @@ def verify_claim(claim: dict) -> dict:
     res = call_llm(prompt)
     clean_res = res.strip().lstrip('```json').lstrip('```').rstrip('```').strip()
     try:
-        # If the AI returns JSON, this will now include the real source URL from 'snippets'
-        return json.loads(clean_res)
+        data = json.loads(clean_res)
+        
+        # --- NEW HEATMAP LOGIC ---
+        verdict = data.get("verdict", "UNVERIFIABLE")
+        
+        if verdict == "VERIFIED":
+            data["score"] = 1.0
+            data["color"] = "#22c55e" # Tailwind Green-500
+        elif verdict == "CONTRADICTED":
+            data["score"] = 0.0
+            data["color"] = "#ef4444" # Tailwind Red-500
+        else:
+            data["score"] = 0.5
+            data["color"] = "#eab308" # Tailwind Yellow-500
+            
+        return data
     except:
-        return {"verdict": "UNVERIFIABLE", "reason": "Parsing error", "source": ""}
-
+        # Fallback for parsing errors
+        return {
+            "verdict": "UNVERIFIABLE", 
+            "reason": "Parsing error", 
+            "source": "",
+            "score": 0.5,
+            "color": "#eab308"
+        }
 # --- ADD THIS NEW FUNCTION BELOW ---
 def repair_sentence(item: dict) -> str:
     """Uses the verified reason to rewrite the lie into a truth."""
@@ -47,12 +67,18 @@ def repair_sentence(item: dict) -> str:
     return call_llm(prompt).strip()
     
 def calculate_document_score(results: list) -> dict:
-    if not results: return {"score": 0, "label": "No Data"}
-    verified = sum(1 for r in results if r['verdict'] == 'VERIFIED')
-    score = int((verified / len(results)) * 100)
+    if not results: 
+        return {"score": 0, "label": "No Data", "color": "#94a3b8"}
     
-    if score > 80: label = "Highly Credible"
-    elif score > 50: label = "Mixed Accuracy"
-    else: label = "High-Risk/Slop"
+    # Calculate average confidence across all results
+    total_points = sum(r.get('score', 0.5) for r in results)
+    score = int((total_points / len(results)) * 100)
     
-    return {"score": score, "label": label}
+    if score > 80:
+        label, color = "Highly Credible", "#22c55e"
+    elif score > 50:
+        label, color = "Mixed Accuracy", "#eab308"
+    else:
+        label, color = "High-Risk / Misinformation", "#ef4444"
+    
+    return {"score": score, "label": label, "color": color}
