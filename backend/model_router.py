@@ -1,24 +1,19 @@
-# model_router.py [cite: 35-78]
 import os
 import google.generativeai as genai
 from groq import Groq
 from openai import OpenAI
 from dotenv import load_dotenv
 
+# Load API keys from the .env file
 load_dotenv()
 
 def call_llm(prompt: str) -> str:
-    # 1. Primary: Gemini (Best reasoning) [cite: 48-54]
-    try:
-        genai.configure(api_key=os.getenv('GEMINI_KEY_1'))
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
-        response = model.generate_content(prompt)
-        if response.text:
-            return response.text
-    except Exception as e:
-        print(f"DEBUG: Gemini Failed: {e}")
-
-    # 2. Fallback 1: Groq (Extreme Speed) [cite: 57-64]
+    """
+    Routes the prompt to the fastest/most reliable available LLM.
+    Always returns a string (expecting a JSON array format for Veritas).
+    """
+    
+    # 1. PRIMARY: Groq (Llama 3.1 - Lightning Fast & highly reliable)
     try:
         client = Groq(api_key=os.getenv('GROQ_KEY'))
         res = client.chat.completions.create(
@@ -29,7 +24,18 @@ def call_llm(prompt: str) -> str:
     except Exception as e:
         print(f"DEBUG: Groq Failed: {e}")
 
-    # 3. Fallback 2: OpenRouter (The "No-Fail" safety net) [cite: 67-74]
+    # 2. FALLBACK 1: Gemini (With the 404-fix version tag)
+    try:
+        genai.configure(api_key=os.getenv('GEMINI_KEY_1'))
+        # CRITICAL FIX: Using '-001' bypasses the deprecated package 404 error
+        model = genai.GenerativeModel('gemini-1.5-flash-001') 
+        response = model.generate_content(prompt)
+        if response.text:
+            return response.text
+    except Exception as e:
+        print(f"DEBUG: Gemini Failed: {e}")
+
+    # 3. FALLBACK 2: OpenRouter (The "No-Fail" safety net)
     try:
         client = OpenAI(
             api_key=os.getenv('OPENROUTER_KEY'),
@@ -43,5 +49,5 @@ def call_llm(prompt: str) -> str:
     except Exception as e:
         print(f"DEBUG: OpenRouter Failed: {e}")
 
-    # 4. Final Fail-safe: Return a valid empty JSON array so pipeline doesn't crash [cite: 77-78]
+    # 4. FINAL FAIL-SAFE: Return an empty JSON array so the pipeline doesn't crash
     return "[]"

@@ -2,7 +2,7 @@
 import json
 from model_router import call_llm
 from prompts import EXTRACT_PROMPT, VERDICT_PROMPT, REPAIR_PROMPT # Added REPAIR_PROMPT
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 def extract_claims(text: str) -> list:
     prompt = EXTRACT_PROMPT.format(text=text)
     raw = call_llm(prompt)
