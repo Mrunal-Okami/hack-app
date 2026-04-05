@@ -6,10 +6,13 @@ const Icon = ({ name, size = 18, ...props }) => {
     return <i data-lucide={name} style={{ width: size, height: size }} {...props}></i>;
 };
 
+// Map icons to the names used in your layout
 const Plus = (p) => <Icon name="plus" {...p} />;
 const ArrowUp = (p) => <Icon name="arrow-up" {...p} />;
 const History = (p) => <Icon name="history" {...p} />;
 const Settings = (p) => <Icon name="settings" {...p} />;
+const Link2 = (p) => <Icon name="link-2" {...p} />;
+const ChevronDown = (p) => <Icon name="chevron-down" {...p} />;
 
 function VersatileApp() {
     const [messages, setMessages] = React.useState([
@@ -41,16 +44,15 @@ function VersatileApp() {
             if (!response.ok) throw new Error("Backend offline");
             const data = await response.json();
 
+            // Mapping results to segments
             const segments = (data.results || []).map(res => ({
                 text: res.sentence,
-                status: res.score === 1.0 ? "true" : res.score === 0.0 ? "fake" : "ai",
-                color: res.color,    
-                reason: res.reason   
+                status: res.score === 1.0 ? "true" : res.score === 0.0 ? "fake" : "ai"
             }));
 
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                segments: segments.length ? segments : [{ text: text, status: 'ai', color: '#eab308', reason: 'Processing...' }],
+                segments: segments.length ? segments : [{ text: text, status: 'ai' }],
                 stats: {
                     true: data.summary ? data.summary.score : 0,
                     fake: data.summary ? (100 - data.summary.score) : 0,
@@ -73,7 +75,7 @@ function VersatileApp() {
     };
 
     return (
-        <div className={`flex h-screen w-full transition-all duration-500 ${isDarkMode ? 'bg-[#212121] text-white' : 'bg-white text-black'}`}>
+        <div className={`flex h-screen w-full ${isDarkMode ? 'bg-[#212121] text-white' : 'bg-white text-black'}`}>
             <aside className={`${isSidebarOpen ? 'w-64' : 'w-0'} bg-[#171717] flex flex-col transition-all border-r border-white/10 text-white overflow-hidden`}>
                 <div className="p-4"><button className="flex items-center gap-2 p-2 hover:bg-white/10 rounded-lg w-full text-sm"><Plus /> New Check</button></div>
                 <div className="flex-1 px-3 py-2 space-y-1 opacity-80">
@@ -86,57 +88,39 @@ function VersatileApp() {
             <main className="flex-1 flex flex-col relative overflow-hidden">
                 <header className="flex flex-col items-center py-4 border-b border-white/5">
                     <h1 className="text-xl font-bold">VERITAS</h1>
-                    <p className="text-[9px] uppercase tracking-widest text-gray-500">Authenticity Heatmap v1.0</p>
                 </header>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
                     <div className="max-w-3xl mx-auto">
                         {messages.map((msg, idx) => (
                             <div key={idx} className={`flex gap-4 mb-8 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] ${msg.role === 'user' ? 'bg-[#2f2f2f] rounded-2xl px-4 py-3 text-white' : 'w-full'}`}>
+                                <div className={`max-w-[80%] ${msg.role === 'user' ? 'bg-[#2f2f2f] rounded-2xl px-4 py-3' : 'w-full'}`}>
                                     {msg.role === 'assistant' && msg.segments ? (
                                         <div className="space-y-4">
-                                            {/* --- HEATMAP DISPLAY START --- */}
-                                            <div className="text-[15px] leading-relaxed p-4 bg-white/5 rounded-2xl border border-white/5">
+                                            <div className="text-[15px]">
                                                 {msg.segments.map((s, i) => (
-                                                    <span 
-                                                        key={i} 
-                                                        title={s.reason} 
-                                                        className="px-1 py-0.5 mx-0.5 rounded transition-all cursor-help border-b-2"
-                                                        style={{ 
-                                                            backgroundColor: `${s.color}20`, 
-                                                            borderColor: s.color,            
-                                                            color: isDarkMode ? '#fff' : '#000'                  
-                                                        }}
-                                                    >
-                                                        {s.text}
-                                                    </span>
+                                                    <span key={i} className={s.status === 'true' ? 'text-green-500' : s.status === 'fake' ? 'text-red-500 underline' : ''}>{s.text} </span>
                                                 ))}
                                             </div>
-                                            {/* --- HEATMAP DISPLAY END --- */}
-                                            
-                                            <div className="grid grid-cols-2 gap-2 p-3 rounded-xl text-center">
-                                                <div className="bg-white/5 p-2 rounded-lg"><p className="text-lg font-bold text-green-500">{msg.stats.true}%</p><p className="text-[9px]">TRUSTED</p></div>
-                                                <div className="bg-white/5 p-2 rounded-lg"><p className="text-lg font-bold text-red-500">{msg.stats.fake}%</p><p className="text-[9px]">RISK</p></div>
+                                            <div className="grid grid-cols-2 gap-2 bg-white/5 p-3 rounded-xl text-center">
+                                                <div><p className="text-lg font-bold text-green-500">{msg.stats.true}%</p><p className="text-[9px]">TRUE</p></div>
+                                                <div><p className="text-lg font-bold text-red-500">{msg.stats.fake}%</p><p className="text-[9px]">FAKE</p></div>
                                             </div>
-                                            <div className="text-center text-[10px] font-bold uppercase py-2 bg-white/5 rounded-lg border border-white/10">Verdict: {msg.stats.label}</div>
+                                            <div className="text-center text-[10px] font-bold uppercase py-2 bg-white/5 rounded">Verdict: {msg.stats.label}</div>
                                         </div>
                                     ) : <p>{msg.content}</p>}
                                 </div>
                             </div>
                         ))}
-                        {isAnalyzing && <div className="text-blue-500 animate-pulse text-sm flex items-center gap-2">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
-                            Generating Truth Heatmap...
-                        </div>}
+                        {isAnalyzing && <div className="text-blue-500 animate-pulse text-sm">Analyzing veracity...</div>}
                         <div ref={chatEndRef} />
                     </div>
                 </div>
 
                 <div className="p-4 pb-8 max-w-3xl mx-auto w-full">
-                    <form onSubmit={handleSend} className="relative bg-[#2f2f2f] rounded-3xl p-2 flex items-center shadow-2xl border border-white/5">
-                        <textarea value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend(e)} placeholder="Paste content or link here..." className="flex-1 bg-transparent border-none focus:ring-0 text-sm p-3 text-white" rows={1} />
-                        <button type="submit" className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full transition-colors"><ArrowUp size={20}/></button>
+                    <form onSubmit={handleSend} className="relative bg-[#2f2f2f] rounded-3xl p-2 flex items-center">
+                        <textarea value={inputText} onChange={e => setInputText(e.target.value)} placeholder="Ask Versatile..." className="flex-1 bg-transparent border-none focus:ring-0 text-sm p-3" rows={1} />
+                        <button type="submit" className="p-2 bg-blue-600 rounded-full"><ArrowUp size={20}/></button>
                     </form>
                 </div>
             </main>
